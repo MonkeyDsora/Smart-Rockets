@@ -1,113 +1,70 @@
 
-
 class Rocket {
-    constructor(x, y, V_, A_, n) {
-        this.x = x;
-        this.x0 = x;
-        this.y = y;
-        this.y0 = y;
-        this.V = V_;
-        this.StartV = V_;
-        this.A = A_;
-        this.StartA = A_;
-        let VectorArray = new Array();
-        let ScalarArray = new Array();
+    constructor(R, V, A, n) {
+        this.R = R.copy();
+        this.V = V.copy();
+        this.A = A.copy();
+        this.DNA = new DNA(n);
         this.n = n;
-
-        for (let i = 0; i < this.n; i++) {
-            VectorArray[i] = createVector(random(-1, 1), random(-1, 1));
-            VectorArray[i]
-            VectorArray[i].setMag(random(0.1));
-            ScalarArray[i] = -1;
-        }
-        this.ThrusterDNA = new DNA(VectorArray, ScalarArray);
-
-        this.ThrusterCount = 0;
+        this.TargetVector = createVector(x_target - this.R.x, y_target - this.R.y);
     }
 
     show() {
-
-        fill(255, 200);
-        ellipse(this.x, this.y, w, w)
-    }
-
-    setDNA(newDNA) {
-
-        let VectorArray = new Array();
-        let ScalarArray = new Array();
-        for (let i = 0; i < newDNA.Genes.length; i++) {
-            VectorArray[i] = newDNA.Genes[i][0];
-            ScalarArray[i] = newDNA.Genes[i][1];
-        }
-
-        this.ThrusterDNA = new DNA(VectorArray, ScalarArray)
+        ellipse(this.R.x, this.R.y, 10);
     }
 
     update() {
+        this.V.add(this.A);
+        this.R.add(this.V);
+        this.TargetVector.set(this.aimTarget(x_target,y_target));
 
-        let AimVector = this.aimTarget(x_target, y_target);
-        AimVector.normalize();
+    }
 
-        if (this.ThrusterCount < this.ThrusterDNA.Genes.length) {
-            let CurrentThrust = this.ThrusterDNA.Genes[this.ThrusterCount];
-            let AccelMag = AimVector.x * CurrentThrust[0].x;
-            AccelMag += AimVector.y * CurrentThrust[0].y;
-            AccelMag *= CurrentThrust[1];
+    aimTarget(x_target, y_target) {
+        let TargetVector = createVector(x_target - this.R.x, y_target - this.R.y);
+        return TargetVector;
+    }
 
-            let AccelVector = CurrentThrust[0].normalize();
-            AccelVector.mult(AccelMag);
+    TargetSpeed(x_target, y_target) {
+        let Speedvector = createVector(x_target, y_target);
+        Speedvector.sub(this.TargetVector);
+        return Speedvector;
+    }
 
-            this.A.x += AccelVector.x;
-            this.A.y += AccelVector.y;
-            this.ThrusterCount += 1;
-        } else {
-            this.V.set(0, 0)
-            this.A.set(0, g)
-            this.ThrusterCount += 1
+    fitness(x_target, y_target) {
+        let f = dist(0, 0, x_target, y_target) / this.TargetVector.mag();
+        return f;
+    }
+
+    thrust(index) {
+        if (index >= this.n) {
+            this.V.set(createVector(0, 0));
+            this.A.set(createVector(0, g));
+            return;
         }
 
-        this.V.x += this.A.x;
-        this.V.y += this.A.y;
+        let SpeedUpdate = this.TargetSpeed(x_target, y_target);
+        SpeedUpdate.setMag(this.DNA.SpeedGenes[index]);
 
+        let PositionUpdate = this.aimTarget(x_target, y_target).copy();
+        PositionUpdate.setMag(this.DNA.PositionGenes[index]);
 
-        this.x += this.V.x;
-        this.y -= this.V.y;
+        let AccelUpdate = createVector(0,0);
+        AccelUpdate.add(SpeedUpdate);
+        AccelUpdate.add(PositionUpdate)
 
-
-    }
-
-    aimTarget(x, y) {
-        return createVector(x - this.x, y - this.y);
-    }
-
-    fitness(x, y) {
-        let d = dist(this.x, this.y, x, y);
-        let fit = dist(this.x0, this.y0, x, y) / pow(d, 1);
-        return fit;
+        this.A.add(AccelUpdate);
     }
 
     mate(other) {
+        let R0 = createVector(0, 0);
+        let V0 = createVector(0, 0);
+        let A0 = createVector(0, g);
+        let childrocket = new Rocket(R0, V0, A0, this.n)
 
-        let x = this.x0;
-        let y = this.y0;
-        let newV = createVector(0, 0);
-        let newA = createVector(0, g);
-        let n = this.n;
+        let newDNA = this.DNA.crossover(other.DNA);
+        childrocket.DNA = newDNA;
 
-        let childRocket = new Rocket(x, y, newV, newA, n);
-        let childDNA = this.ThrusterDNA.crossover(other.ThrusterDNA);
-
-        /* let nmutations = 0;
-        for (let i = 0; i < childDNA.Genes.length; i++) {
-            nmutations += childDNA.mutate(i)
-        }
-        console.log(nmutations) */
-
-        childRocket.setDNA(childDNA);
-
-        return childRocket;
+        return childrocket;
     }
-
-
-
 }

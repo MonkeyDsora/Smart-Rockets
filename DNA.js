@@ -1,54 +1,42 @@
+
 class DNA {
-    constructor(VectorArray, ScalarArray) {
-        this.Genes = new Array();
-        for (let i = 0; i < VectorArray.length; i++) {
-            this.Genes[i] = [VectorArray[i], ScalarArray[i]];
+    constructor(n) {
+        this.SpeedGenes = new Array();
+        this.PositionGenes = new Array();
+        for (let i = 0; i < n; i++) {
+            this.SpeedGenes[i] = random(-0.01,0.01);
+            this.PositionGenes[i] = random(-0.01,0.01);
         }
     }
 
-    /* mutate(index) {
-        let MutChance = random();
-        if (MutChance <= 0.0001) {
-            let newGene = createVector(random(-1, 1), random(-1, 1));
-            newGene.normalize();
-            newGene.setMag(random(rocketpower * 2));
-            this.Genes[index].add(newGene);
-            return 1;
-        } else {
-            return 0;
-        }
-    } */
+    setGenes(newSpeedGenes, newPositionGenes){
+        this.SpeedGenes = newSpeedGenes;
+        this.PositionGenes = newPositionGenes;
+    }
 
     crossover(other) {
-        if (this.Genes.length !== other.Genes.length) {
-            return;
-        }
+        let nGenes = this.SpeedGenes.length;
+        if (nGenes != other.SpeedGenes.length) { return; }
 
-        let newGenes = new Array();
+        let newSpeedGenes = new Array();
+        let newPositionGenes = new Array();
 
-        for (let i = 0; i < this.Genes.length; i++) {
-            let RandomPick = random();
-            if (RandomPick >= 0.5) {
-                newGenes[i] = this.Genes[i];
+        for (let i = 0; i < nGenes; i++) {
+            let Pick = random();
+            if (Pick < 0.5) {
+                newSpeedGenes[i] = this.SpeedGenes[i];
+                newPositionGenes[i] = this.PositionGenes[i];
             } else {
-                newGenes[i] = other.Genes[i];
+                newSpeedGenes[i] = other.SpeedGenes[i];
+                newPositionGenes[i] = other.PositionGenes[i];
             }
         }
 
-        let VectorArray = new Array();
-        let ScalarArray = new Array();
-        let VectorLengthArray = new Array();
+        let childDNA = new DNA(nGenes);
+        childDNA.setGenes(newSpeedGenes, newPositionGenes);
 
-        for (let i = 0; i < newGenes.length; i++) {
-            VectorArray[i] = newGenes[i][0];
-            ScalarArray[i] = newGenes[i][1];
-            VectorLengthArray[i] = newGenes[i][0].mag();
-        }
-
-        let newDNA = new DNA(VectorArray, ScalarArray);
-
-        console.log(min(VectorLengthArray));
-
-        return this;
+        return childDNA;
     }
+
+
 }
